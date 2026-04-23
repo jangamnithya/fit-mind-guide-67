@@ -1,4 +1,5 @@
-import { Outlet, Link, useLocation } from "@tanstack/react-router";
+import { Link, useLocation } from "@tanstack/react-router";
+import type { ReactNode } from "react";
 import { AppSidebar } from "./AppSidebar";
 import {
   LayoutDashboard,
@@ -22,7 +23,7 @@ const mobileNav = [
   { to: "/reports", label: "Report", icon: LineChart },
 ] as const;
 
-export function AppLayout() {
+export function AppLayout({ children }: { children: ReactNode }) {
   const { pathname } = useLocation();
   return (
     <div className="min-h-screen flex w-full bg-background">
@@ -47,9 +48,7 @@ export function AppLayout() {
             A
           </Link>
         </header>
-        <main className="flex-1 p-4 lg:p-8 pb-24 lg:pb-8">
-          <Outlet />
-        </main>
+        <main className="flex-1 p-4 lg:p-8 pb-24 lg:pb-8">{children}</main>
 
         {/* Mobile bottom nav */}
         <nav className="lg:hidden fixed bottom-0 inset-x-0 z-40 bg-card border-t border-border px-2 py-2 flex justify-around shadow-elegant">
