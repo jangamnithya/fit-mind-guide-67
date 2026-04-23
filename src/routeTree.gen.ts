@@ -16,6 +16,7 @@ import { Route as DietRouteImport } from './routes/diet'
 import { Route as DashboardRouteImport } from './routes/dashboard'
 import { Route as AlarmsRouteImport } from './routes/alarms'
 import { Route as ActivityRouteImport } from './routes/activity'
+import { Route as IndexRouteImport } from './routes/index'
 
 const ReportsRoute = ReportsRouteImport.update({
   id: '/reports',
@@ -52,8 +53,14 @@ const ActivityRoute = ActivityRouteImport.update({
   path: '/activity',
   getParentRoute: () => rootRouteImport,
 } as any)
+const IndexRoute = IndexRouteImport.update({
+  id: '/',
+  path: '/',
+  getParentRoute: () => rootRouteImport,
+} as any)
 
 export interface FileRoutesByFullPath {
+  '/': typeof IndexRoute
   '/activity': typeof ActivityRoute
   '/alarms': typeof AlarmsRoute
   '/dashboard': typeof DashboardRoute
@@ -63,6 +70,7 @@ export interface FileRoutesByFullPath {
   '/reports': typeof ReportsRoute
 }
 export interface FileRoutesByTo {
+  '/': typeof IndexRoute
   '/activity': typeof ActivityRoute
   '/alarms': typeof AlarmsRoute
   '/dashboard': typeof DashboardRoute
@@ -73,6 +81,7 @@ export interface FileRoutesByTo {
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
+  '/': typeof IndexRoute
   '/activity': typeof ActivityRoute
   '/alarms': typeof AlarmsRoute
   '/dashboard': typeof DashboardRoute
@@ -84,6 +93,7 @@ export interface FileRoutesById {
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
   fullPaths:
+    | '/'
     | '/activity'
     | '/alarms'
     | '/dashboard'
@@ -93,6 +103,7 @@ export interface FileRouteTypes {
     | '/reports'
   fileRoutesByTo: FileRoutesByTo
   to:
+    | '/'
     | '/activity'
     | '/alarms'
     | '/dashboard'
@@ -102,6 +113,7 @@ export interface FileRouteTypes {
     | '/reports'
   id:
     | '__root__'
+    | '/'
     | '/activity'
     | '/alarms'
     | '/dashboard'
@@ -112,6 +124,7 @@ export interface FileRouteTypes {
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
+  IndexRoute: typeof IndexRoute
   ActivityRoute: typeof ActivityRoute
   AlarmsRoute: typeof AlarmsRoute
   DashboardRoute: typeof DashboardRoute
@@ -172,10 +185,18 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ActivityRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/': {
+      id: '/'
+      path: '/'
+      fullPath: '/'
+      preLoaderRoute: typeof IndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
   }
 }
 
 const rootRouteChildren: RootRouteChildren = {
+  IndexRoute: IndexRoute,
   ActivityRoute: ActivityRoute,
   AlarmsRoute: AlarmsRoute,
   DashboardRoute: DashboardRoute,

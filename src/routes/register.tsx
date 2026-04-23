@@ -137,7 +137,7 @@ function RegisterPage() {
 
             <p className="text-center text-sm text-muted-foreground">
               Already have an account?{" "}
-              <Link to="/" className="text-primary font-medium hover:underline">
+              <Link to="/dashboard" className="text-primary font-medium hover:underline">
                 Go to dashboard
               </Link>
             </p>
