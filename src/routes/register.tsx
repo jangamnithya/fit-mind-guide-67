@@ -1,9 +1,10 @@
-import { createFileRoute, Link } from "@tanstack/react-router";
+import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useState } from "react";
-import { Heart, Mail, Lock, User, Target, Activity } from "lucide-react";
+import { Heart, Mail, Lock, User, Target, Activity, Scale, Ruler, Cake } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { cn } from "@/lib/utils";
+import { toast } from "sonner";
 
 export const Route = createFileRoute("/register")({
   head: () => ({
@@ -24,8 +25,93 @@ const goals = [
   { id: "maintain", label: "Healthy Lifestyle", emoji: "🌱" },
 ] as const;
 
+type FormState = {
+  name: string;
+  email: string;
+  password: string;
+  age: string;
+  weight: string;
+  height: string;
+  goal: string;
+};
+
+type Errors = Partial<Record<keyof FormState, string>>;
+
 function RegisterPage() {
-  const [goal, setGoal] = useState<string>("fit");
+  const navigate = useNavigate();
+  const [form, setForm] = useState<FormState>({
+    name: "",
+    email: "",
+    password: "",
+    age: "",
+    weight: "",
+    height: "",
+    goal: "fit",
+  });
+  const [errors, setErrors] = useState<Errors>({});
+
+  const update = <K extends keyof FormState>(key: K, value: FormState[K]) => {
+    setForm((f) => ({ ...f, [key]: value }));
+    setErrors((e) => ({ ...e, [key]: undefined }));
+  };
+
+  const validate = (): Errors => {
+    const e: Errors = {};
+    if (!form.name.trim()) e.name = "Name is required";
+    else if (form.name.trim().length > 100) e.name = "Name is too long";
+
+    const emailRe = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!form.email.trim()) e.email = "Email is required";
+    else if (!emailRe.test(form.email.trim())) e.email = "Enter a valid email address";
+
+    if (!form.password) e.password = "Password is required";
+    else if (form.password.length < 8) e.password = "Password must be at least 8 characters";
+
+    const age = Number(form.age);
+    if (!form.age) e.age = "Age is required";
+    else if (!Number.isFinite(age) || age < 5 || age > 120) e.age = "Enter a valid age (5–120)";
+
+    const weight = Number(form.weight);
+    if (!form.weight) e.weight = "Weight is required";
+    else if (!Number.isFinite(weight) || weight < 20 || weight > 400) e.weight = "Enter a valid weight in kg";
+
+    const height = Number(form.height);
+    if (!form.height) e.height = "Height is required";
+    else if (!Number.isFinite(height) || height < 80 || height > 260) e.height = "Enter a valid height in cm";
+
+    if (!form.goal) e.goal = "Pick a goal";
+    return e;
+  };
+
+  const handleSubmit = (event: React.FormEvent) => {
+    event.preventDefault();
+    const found = validate();
+    setErrors(found);
+    if (Object.keys(found).length > 0) {
+      toast.error("Please fix the highlighted fields");
+      return;
+    }
+
+    const user = {
+      name: form.name.trim(),
+      email: form.email.trim().toLowerCase(),
+      age: Number(form.age),
+      weight: Number(form.weight),
+      height: Number(form.height),
+      goal: form.goal,
+      createdAt: new Date().toISOString(),
+    };
+
+    try {
+      localStorage.setItem("aura_user", JSON.stringify(user));
+    } catch {
+      toast.error("Could not save your data locally");
+      return;
+    }
+
+    toast.success("Account Created Successfully");
+    navigate({ to: "/welcome" });
+  };
 
   return (
     <div className="min-h-screen grid lg:grid-cols-2 bg-background">
@@ -80,28 +166,108 @@ function RegisterPage() {
           <h2 className="text-3xl font-bold tracking-tight">Create your account</h2>
           <p className="text-muted-foreground mt-2 text-sm">Start your personalized health journey today.</p>
 
-          <form className="mt-8 space-y-5" onSubmit={(e) => e.preventDefault()}>
+          <form className="mt-8 space-y-5" onSubmit={handleSubmit} noValidate>
             <div className="space-y-2">
               <Label htmlFor="name">Full name</Label>
               <div className="relative">
                 <User className="size-4 absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
-                <Input id="name" placeholder="Alex Morgan" className="pl-10 h-11 rounded-xl" />
+                <Input
+                  id="name"
+                  value={form.name}
+                  onChange={(e) => update("name", e.target.value)}
+                  placeholder="Alex Morgan"
+                  className="pl-10 h-11 rounded-xl"
+                  aria-invalid={!!errors.name}
+                />
               </div>
+              {errors.name && <p className="text-xs text-destructive">{errors.name}</p>}
             </div>
 
             <div className="space-y-2">
               <Label htmlFor="email">Email</Label>
               <div className="relative">
                 <Mail className="size-4 absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
-                <Input id="email" type="email" placeholder="alex@example.com" className="pl-10 h-11 rounded-xl" />
+                <Input
+                  id="email"
+                  type="email"
+                  value={form.email}
+                  onChange={(e) => update("email", e.target.value)}
+                  placeholder="alex@example.com"
+                  className="pl-10 h-11 rounded-xl"
+                  aria-invalid={!!errors.email}
+                />
               </div>
+              {errors.email && <p className="text-xs text-destructive">{errors.email}</p>}
             </div>
 
             <div className="space-y-2">
               <Label htmlFor="password">Password</Label>
               <div className="relative">
                 <Lock className="size-4 absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
-                <Input id="password" type="password" placeholder="At least 8 characters" className="pl-10 h-11 rounded-xl" />
+                <Input
+                  id="password"
+                  type="password"
+                  value={form.password}
+                  onChange={(e) => update("password", e.target.value)}
+                  placeholder="At least 8 characters"
+                  className="pl-10 h-11 rounded-xl"
+                  aria-invalid={!!errors.password}
+                />
+              </div>
+              {errors.password && <p className="text-xs text-destructive">{errors.password}</p>}
+            </div>
+
+            <div className="grid grid-cols-3 gap-3">
+              <div className="space-y-2">
+                <Label htmlFor="age">Age</Label>
+                <div className="relative">
+                  <Cake className="size-4 absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
+                  <Input
+                    id="age"
+                    type="number"
+                    inputMode="numeric"
+                    value={form.age}
+                    onChange={(e) => update("age", e.target.value)}
+                    placeholder="28"
+                    className="pl-9 h-11 rounded-xl"
+                    aria-invalid={!!errors.age}
+                  />
+                </div>
+                {errors.age && <p className="text-xs text-destructive">{errors.age}</p>}
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="weight">Weight (kg)</Label>
+                <div className="relative">
+                  <Scale className="size-4 absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
+                  <Input
+                    id="weight"
+                    type="number"
+                    inputMode="decimal"
+                    value={form.weight}
+                    onChange={(e) => update("weight", e.target.value)}
+                    placeholder="68"
+                    className="pl-9 h-11 rounded-xl"
+                    aria-invalid={!!errors.weight}
+                  />
+                </div>
+                {errors.weight && <p className="text-xs text-destructive">{errors.weight}</p>}
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="height">Height (cm)</Label>
+                <div className="relative">
+                  <Ruler className="size-4 absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
+                  <Input
+                    id="height"
+                    type="number"
+                    inputMode="numeric"
+                    value={form.height}
+                    onChange={(e) => update("height", e.target.value)}
+                    placeholder="172"
+                    className="pl-9 h-11 rounded-xl"
+                    aria-invalid={!!errors.height}
+                  />
+                </div>
+                {errors.height && <p className="text-xs text-destructive">{errors.height}</p>}
               </div>
             </div>
 
@@ -112,10 +278,10 @@ function RegisterPage() {
                   <button
                     type="button"
                     key={g.id}
-                    onClick={() => setGoal(g.id)}
+                    onClick={() => update("goal", g.id)}
                     className={cn(
                       "flex items-center gap-2 px-3 py-2.5 rounded-xl border text-sm font-medium transition text-left",
-                      goal === g.id
+                      form.goal === g.id
                         ? "bg-gradient-hero text-primary-foreground border-transparent shadow-soft"
                         : "border-border bg-card hover:bg-muted",
                     )}
@@ -125,6 +291,7 @@ function RegisterPage() {
                   </button>
                 ))}
               </div>
+              {errors.goal && <p className="text-xs text-destructive">{errors.goal}</p>}
             </div>
 
             <button
