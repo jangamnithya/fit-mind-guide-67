@@ -13,6 +13,7 @@ import { Route as ReportsRouteImport } from './routes/reports'
 import { Route as RegisterRouteImport } from './routes/register'
 import { Route as MedicineRouteImport } from './routes/medicine'
 import { Route as DietRouteImport } from './routes/diet'
+import { Route as DashboardRouteImport } from './routes/dashboard'
 import { Route as AlarmsRouteImport } from './routes/alarms'
 import { Route as ActivityRouteImport } from './routes/activity'
 import { Route as IndexRouteImport } from './routes/index'
@@ -37,6 +38,11 @@ const DietRoute = DietRouteImport.update({
   path: '/diet',
   getParentRoute: () => rootRouteImport,
 } as any)
+const DashboardRoute = DashboardRouteImport.update({
+  id: '/dashboard',
+  path: '/dashboard',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const AlarmsRoute = AlarmsRouteImport.update({
   id: '/alarms',
   path: '/alarms',
@@ -57,6 +63,7 @@ export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/activity': typeof ActivityRoute
   '/alarms': typeof AlarmsRoute
+  '/dashboard': typeof DashboardRoute
   '/diet': typeof DietRoute
   '/medicine': typeof MedicineRoute
   '/register': typeof RegisterRoute
@@ -66,6 +73,7 @@ export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/activity': typeof ActivityRoute
   '/alarms': typeof AlarmsRoute
+  '/dashboard': typeof DashboardRoute
   '/diet': typeof DietRoute
   '/medicine': typeof MedicineRoute
   '/register': typeof RegisterRoute
@@ -76,6 +84,7 @@ export interface FileRoutesById {
   '/': typeof IndexRoute
   '/activity': typeof ActivityRoute
   '/alarms': typeof AlarmsRoute
+  '/dashboard': typeof DashboardRoute
   '/diet': typeof DietRoute
   '/medicine': typeof MedicineRoute
   '/register': typeof RegisterRoute
@@ -87,6 +96,7 @@ export interface FileRouteTypes {
     | '/'
     | '/activity'
     | '/alarms'
+    | '/dashboard'
     | '/diet'
     | '/medicine'
     | '/register'
@@ -96,6 +106,7 @@ export interface FileRouteTypes {
     | '/'
     | '/activity'
     | '/alarms'
+    | '/dashboard'
     | '/diet'
     | '/medicine'
     | '/register'
@@ -105,6 +116,7 @@ export interface FileRouteTypes {
     | '/'
     | '/activity'
     | '/alarms'
+    | '/dashboard'
     | '/diet'
     | '/medicine'
     | '/register'
@@ -115,6 +127,7 @@ export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   ActivityRoute: typeof ActivityRoute
   AlarmsRoute: typeof AlarmsRoute
+  DashboardRoute: typeof DashboardRoute
   DietRoute: typeof DietRoute
   MedicineRoute: typeof MedicineRoute
   RegisterRoute: typeof RegisterRoute
@@ -151,6 +164,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof DietRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/dashboard': {
+      id: '/dashboard'
+      path: '/dashboard'
+      fullPath: '/dashboard'
+      preLoaderRoute: typeof DashboardRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/alarms': {
       id: '/alarms'
       path: '/alarms'
@@ -179,6 +199,7 @@ const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   ActivityRoute: ActivityRoute,
   AlarmsRoute: AlarmsRoute,
+  DashboardRoute: DashboardRoute,
   DietRoute: DietRoute,
   MedicineRoute: MedicineRoute,
   RegisterRoute: RegisterRoute,
@@ -187,3 +208,12 @@ const rootRouteChildren: RootRouteChildren = {
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
+
+import type { getRouter } from './router.tsx'
+import type { createStart } from '@tanstack/react-start'
+declare module '@tanstack/react-start' {
+  interface Register {
+    ssr: true
+    router: Awaited<ReturnType<typeof getRouter>>
+  }
+}

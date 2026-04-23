@@ -15,7 +15,7 @@ import { Input } from "@/components/ui/input";
 import { cn } from "@/lib/utils";
 
 const mobileNav = [
-  { to: "/", label: "Home", icon: LayoutDashboard },
+  { to: "/dashboard", label: "Home", icon: LayoutDashboard },
   { to: "/activity", label: "Activity", icon: Activity },
   { to: "/alarms", label: "Alarms", icon: AlarmClock },
   { to: "/medicine", label: "Meds", icon: Pill },

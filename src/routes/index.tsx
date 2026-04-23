@@ -1,197 +1,125 @@
-import { createFileRoute } from "@tanstack/react-router";
-import { AppLayout } from "@/components/AppLayout";
-import { PageHeader } from "@/components/PageHeader";
-import { StatCard } from "@/components/StatCard";
-import {
-  Footprints,
-  Flame,
-  Droplets,
-  Moon,
-  Pill,
-  Apple,
-  TrendingUp,
-  Dumbbell,
-} from "lucide-react";
-import {
-  Area,
-  AreaChart,
-  CartesianGrid,
-  ResponsiveContainer,
-  Tooltip,
-  XAxis,
-  YAxis,
-} from "recharts";
+import { createFileRoute, Link } from "@tanstack/react-router";
+import { Activity, Heart, ArrowRight, Bell, Pill, Utensils, LineChart } from "lucide-react";
+import heroImage from "@/assets/landing-hero.jpg";
 
 export const Route = createFileRoute("/")({
   head: () => ({
     meta: [
-      { title: "Dashboard — Aura Health Companion" },
+      { title: "Personal Fitness Companion — Track Your Health, Transform Your Life" },
       {
         name: "description",
         content:
-          "Personal fitness companion: track steps, calories, hydration, sleep, medicine and weekly health progress.",
+          "Your all-in-one personal fitness companion: smart alarms, medicine reminders, step & calorie tracking, weekly diet planner and detailed health reports.",
       },
-      { property: "og:title", content: "Aura — Personal Fitness Companion" },
+      { property: "og:title", content: "Personal Fitness Companion" },
       {
         property: "og:description",
-        content: "Smart alarms, medicine care, diet planner and weekly health reports.",
+        content: "Track Your Health, Transform Your Life — smart alarms, diet planner, weekly reports.",
       },
     ],
   }),
-  component: DashboardPage,
+  component: LandingPage,
 });
 
-const weekData = [
-  { day: "Mon", steps: 8200, calories: 410 },
-  { day: "Tue", steps: 10500, calories: 520 },
-  { day: "Wed", steps: 7800, calories: 390 },
-  { day: "Thu", steps: 12100, calories: 605 },
-  { day: "Fri", steps: 9300, calories: 460 },
-  { day: "Sat", steps: 11800, calories: 590 },
-  { day: "Sun", steps: 8750, calories: 452 },
-];
+const features = [
+  { icon: Bell, label: "Smart Alarms" },
+  { icon: Pill, label: "Medicine Care" },
+  { icon: Utensils, label: "Diet Planner" },
+  { icon: LineChart, label: "Weekly Reports" },
+] as const;
 
-const macros = [
-  { label: "Protein", value: "120", unit: "g", target: 150, tone: "primary" as const },
-  { label: "Carbs", value: "250", unit: "g", target: 320, tone: "accent" as const },
-  { label: "Vitamins", value: "800", unit: "mg", target: 1000, tone: "primary" as const },
-  { label: "Fats", value: "58", unit: "g", target: 80, tone: "warning" as const },
-];
-
-function DashboardPage() {
+function LandingPage() {
   return (
-    <AppLayout>
-      <PageHeader
-        title="Good morning, Alex 👋"
-        subtitle="Here's how your body is doing today."
+    <div className="relative min-h-screen w-full overflow-hidden bg-background">
+      {/* Background image */}
+      <img
+        src={heroImage}
+        alt="People exercising at sunrise — yoga, running and strength training"
+        width={1920}
+        height={1080}
+        className="absolute inset-0 h-full w-full object-cover"
       />
+      {/* Gradient overlay for legibility & on-brand color wash */}
+      <div className="absolute inset-0 bg-gradient-to-br from-primary/85 via-primary/60 to-accent/75" />
+      <div className="absolute inset-0 bg-black/25" />
 
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
-        <StatCard icon={Footprints} label="Steps" value="8,750" unit="/ 12k" progress={73} tone="accent" />
-        <StatCard icon={Flame} label="Calories" value="452" unit="kcal" progress={68} tone="warning" />
-        <StatCard icon={Droplets} label="Water" value="1.8" unit="L" progress={60} tone="primary" />
-        <StatCard icon={Moon} label="Sleep" value="7.2" unit="hrs" progress={90} tone="primary" />
-      </div>
+      {/* Top nav */}
+      <header className="relative z-10 flex items-center justify-between px-5 sm:px-10 py-5">
+        <Link to="/" className="flex items-center gap-2 text-white">
+          <div className="size-10 rounded-2xl bg-white/15 backdrop-blur flex items-center justify-center ring-1 ring-white/30">
+            <Heart className="size-5" fill="currentColor" />
+          </div>
+          <div>
+            <div className="font-bold text-base leading-none">Aura</div>
+            <div className="text-[11px] opacity-80">Fitness Companion</div>
+          </div>
+        </Link>
+        <nav className="flex items-center gap-2 sm:gap-4">
+          <Link
+            to="/register"
+            className="text-white/90 hover:text-white text-sm font-medium px-3 py-2"
+          >
+            Sign up
+          </Link>
+          <Link
+            to="/dashboard"
+            className="hidden sm:inline-flex text-white/90 hover:text-white text-sm font-medium px-3 py-2"
+          >
+            Dashboard
+          </Link>
+        </nav>
+      </header>
 
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-6">
-        <div className="lg:col-span-2 bg-card rounded-3xl p-6 shadow-soft border border-border/50">
-          <div className="flex items-center justify-between mb-6">
-            <div>
-              <h2 className="text-lg font-semibold">Weekly Activity</h2>
-              <p className="text-sm text-muted-foreground">Steps & calories burned</p>
+      {/* Hero */}
+      <main className="relative z-10 flex min-h-[calc(100vh-88px)] flex-col items-center justify-center px-5 text-center text-white">
+        <span className="inline-flex items-center gap-2 rounded-full bg-white/15 backdrop-blur px-4 py-1.5 text-xs font-medium ring-1 ring-white/25">
+          <Activity className="size-3.5" />
+          Your everyday health, beautifully tracked
+        </span>
+
+        <h1 className="mt-6 text-5xl sm:text-6xl lg:text-8xl font-extrabold tracking-tight leading-[1.05] drop-shadow-[0_4px_20px_rgba(0,0,0,0.35)]">
+          Personal Fitness
+          <br />
+          <span className="bg-gradient-to-r from-white via-emerald-200 to-cyan-200 bg-clip-text text-transparent">
+            Companion
+          </span>
+        </h1>
+
+        <p className="mt-6 max-w-xl text-base sm:text-lg lg:text-xl text-white/90 font-medium">
+          Track Your Health, Transform Your Life.
+        </p>
+
+        <div className="mt-10 flex flex-col sm:flex-row items-center gap-3">
+          <Link
+            to="/register"
+            className="group inline-flex items-center gap-2 rounded-full bg-white text-primary font-bold px-8 py-4 text-base shadow-elegant hover:shadow-glow hover:scale-[1.02] transition-all"
+          >
+            Get Started
+            <ArrowRight className="size-4 transition-transform group-hover:translate-x-1" />
+          </Link>
+          <Link
+            to="/dashboard"
+            className="inline-flex items-center gap-2 rounded-full bg-white/10 backdrop-blur ring-1 ring-white/30 text-white font-semibold px-8 py-4 text-base hover:bg-white/20 transition"
+          >
+            Explore Dashboard
+          </Link>
+        </div>
+
+        {/* Feature pills */}
+        <div className="mt-14 grid grid-cols-2 sm:grid-cols-4 gap-3 sm:gap-4 w-full max-w-3xl">
+          {features.map(({ icon: Icon, label }) => (
+            <div
+              key={label}
+              className="flex flex-col items-center gap-2 rounded-2xl bg-white/10 backdrop-blur ring-1 ring-white/20 px-3 py-4"
+            >
+              <div className="size-10 rounded-xl bg-white/15 flex items-center justify-center">
+                <Icon className="size-5" />
+              </div>
+              <span className="text-xs sm:text-sm font-medium">{label}</span>
             </div>
-            <div className="flex gap-3 text-xs">
-              <span className="flex items-center gap-1.5">
-                <span className="size-2.5 rounded-full bg-primary" /> Steps
-              </span>
-              <span className="flex items-center gap-1.5">
-                <span className="size-2.5 rounded-full bg-accent" /> Calories
-              </span>
-            </div>
-          </div>
-          <div className="h-64">
-            <ResponsiveContainer width="100%" height="100%">
-              <AreaChart data={weekData}>
-                <defs>
-                  <linearGradient id="g1" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="0%" stopColor="oklch(0.58 0.18 250)" stopOpacity={0.4} />
-                    <stop offset="100%" stopColor="oklch(0.58 0.18 250)" stopOpacity={0} />
-                  </linearGradient>
-                  <linearGradient id="g2" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="0%" stopColor="oklch(0.7 0.18 150)" stopOpacity={0.4} />
-                    <stop offset="100%" stopColor="oklch(0.7 0.18 150)" stopOpacity={0} />
-                  </linearGradient>
-                </defs>
-                <CartesianGrid strokeDasharray="3 3" stroke="oklch(0.92 0.012 240)" vertical={false} />
-                <XAxis dataKey="day" stroke="oklch(0.52 0.03 250)" fontSize={12} tickLine={false} axisLine={false} />
-                <YAxis stroke="oklch(0.52 0.03 250)" fontSize={12} tickLine={false} axisLine={false} />
-                <Tooltip
-                  contentStyle={{
-                    background: "oklch(1 0 0)",
-                    border: "1px solid oklch(0.92 0.012 240)",
-                    borderRadius: 12,
-                    boxShadow: "0 8px 24px -8px oklch(0.58 0.18 250 / 0.2)",
-                  }}
-                />
-                <Area type="monotone" dataKey="steps" stroke="oklch(0.58 0.18 250)" strokeWidth={2.5} fill="url(#g1)" />
-                <Area type="monotone" dataKey="calories" stroke="oklch(0.7 0.18 150)" strokeWidth={2.5} fill="url(#g2)" />
-              </AreaChart>
-            </ResponsiveContainer>
-          </div>
+          ))}
         </div>
-
-        <div className="bg-gradient-hero rounded-3xl p-6 text-primary-foreground shadow-elegant relative overflow-hidden">
-          <div className="absolute -top-10 -right-10 size-40 rounded-full bg-white/10 blur-2xl" />
-          <Dumbbell className="size-8 mb-4" />
-          <h3 className="text-xl font-bold">Today's Workout</h3>
-          <p className="text-sm opacity-90 mt-1">Upper Body Strength</p>
-          <div className="mt-6 space-y-2 text-sm">
-            <div className="flex justify-between"><span className="opacity-80">Duration</span><span className="font-semibold">45 min</span></div>
-            <div className="flex justify-between"><span className="opacity-80">Exercises</span><span className="font-semibold">8</span></div>
-            <div className="flex justify-between"><span className="opacity-80">Burn target</span><span className="font-semibold">320 kcal</span></div>
-          </div>
-          <button className="mt-6 w-full bg-white text-primary font-semibold rounded-full py-2.5 hover:bg-white/90 transition">
-            Start Workout
-          </button>
-        </div>
-      </div>
-
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        <div className="lg:col-span-2 bg-card rounded-3xl p-6 shadow-soft border border-border/50">
-          <div className="flex items-center justify-between mb-5">
-            <div>
-              <h2 className="text-lg font-semibold">Nutrition Today</h2>
-              <p className="text-sm text-muted-foreground">Macro & micro tracking</p>
-            </div>
-            <Apple className="size-5 text-accent" />
-          </div>
-          <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-            {macros.map((m) => {
-              const pct = Math.round((parseInt(m.value) / m.target) * 100);
-              const barColor =
-                m.tone === "accent" ? "bg-gradient-accent" : m.tone === "warning" ? "bg-warning" : "bg-gradient-primary";
-              return (
-                <div key={m.label} className="rounded-2xl bg-muted p-4">
-                  <div className="text-xs text-muted-foreground font-medium">{m.label}</div>
-                  <div className="mt-1 flex items-baseline gap-1">
-                    <span className="text-2xl font-bold tabular-nums">{m.value}</span>
-                    <span className="text-xs text-muted-foreground">{m.unit}</span>
-                  </div>
-                  <div className="mt-3 h-1.5 w-full overflow-hidden rounded-full bg-background">
-                    <div className={`h-full rounded-full ${barColor}`} style={{ width: `${pct}%` }} />
-                  </div>
-                  <div className="text-[11px] text-muted-foreground mt-1.5">{pct}% of {m.target}{m.unit}</div>
-                </div>
-              );
-            })}
-          </div>
-        </div>
-
-        <div className="bg-card rounded-3xl p-6 shadow-soft border border-border/50">
-          <div className="flex items-center justify-between mb-5">
-            <h2 className="text-lg font-semibold">Next Up</h2>
-            <TrendingUp className="size-5 text-primary" />
-          </div>
-          <ul className="space-y-3">
-            {[
-              { time: "10:00", title: "Vitamin D", icon: Pill, tone: "primary" },
-              { time: "12:30", title: "Lunch — Salad bowl", icon: Apple, tone: "accent" },
-              { time: "14:00", title: "Drink 500ml water", icon: Droplets, tone: "primary" },
-              { time: "18:00", title: "Cardio session", icon: Dumbbell, tone: "accent" },
-            ].map((item) => (
-              <li key={item.time} className="flex items-center gap-3 p-3 rounded-2xl bg-muted">
-                <div className={`size-9 rounded-xl flex items-center justify-center ${item.tone === "accent" ? "bg-accent/15 text-accent" : "bg-primary/15 text-primary"}`}>
-                  <item.icon className="size-4" />
-                </div>
-                <div className="flex-1 min-w-0">
-                  <div className="text-sm font-medium truncate">{item.title}</div>
-                  <div className="text-xs text-muted-foreground">{item.time}</div>
-                </div>
-              </li>
-            ))}
-          </ul>
-        </div>
-      </div>
-    </AppLayout>
+      </main>
+    </div>
   );
 }

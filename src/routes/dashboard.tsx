@@ -1,0 +1,197 @@
+import { createFileRoute } from "@tanstack/react-router";
+import { AppLayout } from "@/components/AppLayout";
+import { PageHeader } from "@/components/PageHeader";
+import { StatCard } from "@/components/StatCard";
+import {
+  Footprints,
+  Flame,
+  Droplets,
+  Moon,
+  Pill,
+  Apple,
+  TrendingUp,
+  Dumbbell,
+} from "lucide-react";
+import {
+  Area,
+  AreaChart,
+  CartesianGrid,
+  ResponsiveContainer,
+  Tooltip,
+  XAxis,
+  YAxis,
+} from "recharts";
+
+export const Route = createFileRoute("/dashboard")({
+  head: () => ({
+    meta: [
+      { title: "Dashboard — Aura Health Companion" },
+      {
+        name: "description",
+        content:
+          "Personal fitness companion: track steps, calories, hydration, sleep, medicine and weekly health progress.",
+      },
+      { property: "og:title", content: "Aura — Personal Fitness Companion" },
+      {
+        property: "og:description",
+        content: "Smart alarms, medicine care, diet planner and weekly health reports.",
+      },
+    ],
+  }),
+  component: DashboardPage,
+});
+
+const weekData = [
+  { day: "Mon", steps: 8200, calories: 410 },
+  { day: "Tue", steps: 10500, calories: 520 },
+  { day: "Wed", steps: 7800, calories: 390 },
+  { day: "Thu", steps: 12100, calories: 605 },
+  { day: "Fri", steps: 9300, calories: 460 },
+  { day: "Sat", steps: 11800, calories: 590 },
+  { day: "Sun", steps: 8750, calories: 452 },
+];
+
+const macros = [
+  { label: "Protein", value: "120", unit: "g", target: 150, tone: "primary" as const },
+  { label: "Carbs", value: "250", unit: "g", target: 320, tone: "accent" as const },
+  { label: "Vitamins", value: "800", unit: "mg", target: 1000, tone: "primary" as const },
+  { label: "Fats", value: "58", unit: "g", target: 80, tone: "warning" as const },
+];
+
+function DashboardPage() {
+  return (
+    <AppLayout>
+      <PageHeader
+        title="Good morning, Alex 👋"
+        subtitle="Here's how your body is doing today."
+      />
+
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+        <StatCard icon={Footprints} label="Steps" value="8,750" unit="/ 12k" progress={73} tone="accent" />
+        <StatCard icon={Flame} label="Calories" value="452" unit="kcal" progress={68} tone="warning" />
+        <StatCard icon={Droplets} label="Water" value="1.8" unit="L" progress={60} tone="primary" />
+        <StatCard icon={Moon} label="Sleep" value="7.2" unit="hrs" progress={90} tone="primary" />
+      </div>
+
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-6">
+        <div className="lg:col-span-2 bg-card rounded-3xl p-6 shadow-soft border border-border/50">
+          <div className="flex items-center justify-between mb-6">
+            <div>
+              <h2 className="text-lg font-semibold">Weekly Activity</h2>
+              <p className="text-sm text-muted-foreground">Steps & calories burned</p>
+            </div>
+            <div className="flex gap-3 text-xs">
+              <span className="flex items-center gap-1.5">
+                <span className="size-2.5 rounded-full bg-primary" /> Steps
+              </span>
+              <span className="flex items-center gap-1.5">
+                <span className="size-2.5 rounded-full bg-accent" /> Calories
+              </span>
+            </div>
+          </div>
+          <div className="h-64">
+            <ResponsiveContainer width="100%" height="100%">
+              <AreaChart data={weekData}>
+                <defs>
+                  <linearGradient id="g1" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="0%" stopColor="oklch(0.58 0.18 250)" stopOpacity={0.4} />
+                    <stop offset="100%" stopColor="oklch(0.58 0.18 250)" stopOpacity={0} />
+                  </linearGradient>
+                  <linearGradient id="g2" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="0%" stopColor="oklch(0.7 0.18 150)" stopOpacity={0.4} />
+                    <stop offset="100%" stopColor="oklch(0.7 0.18 150)" stopOpacity={0} />
+                  </linearGradient>
+                </defs>
+                <CartesianGrid strokeDasharray="3 3" stroke="oklch(0.92 0.012 240)" vertical={false} />
+                <XAxis dataKey="day" stroke="oklch(0.52 0.03 250)" fontSize={12} tickLine={false} axisLine={false} />
+                <YAxis stroke="oklch(0.52 0.03 250)" fontSize={12} tickLine={false} axisLine={false} />
+                <Tooltip
+                  contentStyle={{
+                    background: "oklch(1 0 0)",
+                    border: "1px solid oklch(0.92 0.012 240)",
+                    borderRadius: 12,
+                    boxShadow: "0 8px 24px -8px oklch(0.58 0.18 250 / 0.2)",
+                  }}
+                />
+                <Area type="monotone" dataKey="steps" stroke="oklch(0.58 0.18 250)" strokeWidth={2.5} fill="url(#g1)" />
+                <Area type="monotone" dataKey="calories" stroke="oklch(0.7 0.18 150)" strokeWidth={2.5} fill="url(#g2)" />
+              </AreaChart>
+            </ResponsiveContainer>
+          </div>
+        </div>
+
+        <div className="bg-gradient-hero rounded-3xl p-6 text-primary-foreground shadow-elegant relative overflow-hidden">
+          <div className="absolute -top-10 -right-10 size-40 rounded-full bg-white/10 blur-2xl" />
+          <Dumbbell className="size-8 mb-4" />
+          <h3 className="text-xl font-bold">Today's Workout</h3>
+          <p className="text-sm opacity-90 mt-1">Upper Body Strength</p>
+          <div className="mt-6 space-y-2 text-sm">
+            <div className="flex justify-between"><span className="opacity-80">Duration</span><span className="font-semibold">45 min</span></div>
+            <div className="flex justify-between"><span className="opacity-80">Exercises</span><span className="font-semibold">8</span></div>
+            <div className="flex justify-between"><span className="opacity-80">Burn target</span><span className="font-semibold">320 kcal</span></div>
+          </div>
+          <button className="mt-6 w-full bg-white text-primary font-semibold rounded-full py-2.5 hover:bg-white/90 transition">
+            Start Workout
+          </button>
+        </div>
+      </div>
+
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        <div className="lg:col-span-2 bg-card rounded-3xl p-6 shadow-soft border border-border/50">
+          <div className="flex items-center justify-between mb-5">
+            <div>
+              <h2 className="text-lg font-semibold">Nutrition Today</h2>
+              <p className="text-sm text-muted-foreground">Macro & micro tracking</p>
+            </div>
+            <Apple className="size-5 text-accent" />
+          </div>
+          <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+            {macros.map((m) => {
+              const pct = Math.round((parseInt(m.value) / m.target) * 100);
+              const barColor =
+                m.tone === "accent" ? "bg-gradient-accent" : m.tone === "warning" ? "bg-warning" : "bg-gradient-primary";
+              return (
+                <div key={m.label} className="rounded-2xl bg-muted p-4">
+                  <div className="text-xs text-muted-foreground font-medium">{m.label}</div>
+                  <div className="mt-1 flex items-baseline gap-1">
+                    <span className="text-2xl font-bold tabular-nums">{m.value}</span>
+                    <span className="text-xs text-muted-foreground">{m.unit}</span>
+                  </div>
+                  <div className="mt-3 h-1.5 w-full overflow-hidden rounded-full bg-background">
+                    <div className={`h-full rounded-full ${barColor}`} style={{ width: `${pct}%` }} />
+                  </div>
+                  <div className="text-[11px] text-muted-foreground mt-1.5">{pct}% of {m.target}{m.unit}</div>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+
+        <div className="bg-card rounded-3xl p-6 shadow-soft border border-border/50">
+          <div className="flex items-center justify-between mb-5">
+            <h2 className="text-lg font-semibold">Next Up</h2>
+            <TrendingUp className="size-5 text-primary" />
+          </div>
+          <ul className="space-y-3">
+            {[
+              { time: "10:00", title: "Vitamin D", icon: Pill, tone: "primary" },
+              { time: "12:30", title: "Lunch — Salad bowl", icon: Apple, tone: "accent" },
+              { time: "14:00", title: "Drink 500ml water", icon: Droplets, tone: "primary" },
+              { time: "18:00", title: "Cardio session", icon: Dumbbell, tone: "accent" },
+            ].map((item) => (
+              <li key={item.time} className="flex items-center gap-3 p-3 rounded-2xl bg-muted">
+                <div className={`size-9 rounded-xl flex items-center justify-center ${item.tone === "accent" ? "bg-accent/15 text-accent" : "bg-primary/15 text-primary"}`}>
+                  <item.icon className="size-4" />
+                </div>
+                <div className="flex-1 min-w-0">
+                  <div className="text-sm font-medium truncate">{item.title}</div>
+                  <div className="text-xs text-muted-foreground">{item.time}</div>
+                </div>
+              </li>
+            ))}
+          </ul>
+        </div>
+      </div>
+    </AppLayout>
+  );
+}
