@@ -22,7 +22,7 @@ import {
   YAxis,
 } from "recharts";
 
-export const Route = createFileRoute("/")({
+export const Route = createFileRoute("/dashboard")({
   head: () => ({
     meta: [
       { title: "Dashboard — Aura Health Companion" },

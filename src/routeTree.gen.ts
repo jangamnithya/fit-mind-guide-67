@@ -13,9 +13,9 @@ import { Route as ReportsRouteImport } from './routes/reports'
 import { Route as RegisterRouteImport } from './routes/register'
 import { Route as MedicineRouteImport } from './routes/medicine'
 import { Route as DietRouteImport } from './routes/diet'
+import { Route as DashboardRouteImport } from './routes/dashboard'
 import { Route as AlarmsRouteImport } from './routes/alarms'
 import { Route as ActivityRouteImport } from './routes/activity'
-import { Route as IndexRouteImport } from './routes/index'
 
 const ReportsRoute = ReportsRouteImport.update({
   id: '/reports',
@@ -37,6 +37,11 @@ const DietRoute = DietRouteImport.update({
   path: '/diet',
   getParentRoute: () => rootRouteImport,
 } as any)
+const DashboardRoute = DashboardRouteImport.update({
+  id: '/dashboard',
+  path: '/dashboard',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const AlarmsRoute = AlarmsRouteImport.update({
   id: '/alarms',
   path: '/alarms',
@@ -47,25 +52,20 @@ const ActivityRoute = ActivityRouteImport.update({
   path: '/activity',
   getParentRoute: () => rootRouteImport,
 } as any)
-const IndexRoute = IndexRouteImport.update({
-  id: '/',
-  path: '/',
-  getParentRoute: () => rootRouteImport,
-} as any)
 
 export interface FileRoutesByFullPath {
-  '/': typeof IndexRoute
   '/activity': typeof ActivityRoute
   '/alarms': typeof AlarmsRoute
+  '/dashboard': typeof DashboardRoute
   '/diet': typeof DietRoute
   '/medicine': typeof MedicineRoute
   '/register': typeof RegisterRoute
   '/reports': typeof ReportsRoute
 }
 export interface FileRoutesByTo {
-  '/': typeof IndexRoute
   '/activity': typeof ActivityRoute
   '/alarms': typeof AlarmsRoute
+  '/dashboard': typeof DashboardRoute
   '/diet': typeof DietRoute
   '/medicine': typeof MedicineRoute
   '/register': typeof RegisterRoute
@@ -73,9 +73,9 @@ export interface FileRoutesByTo {
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
-  '/': typeof IndexRoute
   '/activity': typeof ActivityRoute
   '/alarms': typeof AlarmsRoute
+  '/dashboard': typeof DashboardRoute
   '/diet': typeof DietRoute
   '/medicine': typeof MedicineRoute
   '/register': typeof RegisterRoute
@@ -84,27 +84,27 @@ export interface FileRoutesById {
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
   fullPaths:
-    | '/'
     | '/activity'
     | '/alarms'
+    | '/dashboard'
     | '/diet'
     | '/medicine'
     | '/register'
     | '/reports'
   fileRoutesByTo: FileRoutesByTo
   to:
-    | '/'
     | '/activity'
     | '/alarms'
+    | '/dashboard'
     | '/diet'
     | '/medicine'
     | '/register'
     | '/reports'
   id:
     | '__root__'
-    | '/'
     | '/activity'
     | '/alarms'
+    | '/dashboard'
     | '/diet'
     | '/medicine'
     | '/register'
@@ -112,9 +112,9 @@ export interface FileRouteTypes {
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
-  IndexRoute: typeof IndexRoute
   ActivityRoute: typeof ActivityRoute
   AlarmsRoute: typeof AlarmsRoute
+  DashboardRoute: typeof DashboardRoute
   DietRoute: typeof DietRoute
   MedicineRoute: typeof MedicineRoute
   RegisterRoute: typeof RegisterRoute
@@ -151,6 +151,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof DietRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/dashboard': {
+      id: '/dashboard'
+      path: '/dashboard'
+      fullPath: '/dashboard'
+      preLoaderRoute: typeof DashboardRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/alarms': {
       id: '/alarms'
       path: '/alarms'
@@ -165,20 +172,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ActivityRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/': {
-      id: '/'
-      path: '/'
-      fullPath: '/'
-      preLoaderRoute: typeof IndexRouteImport
-      parentRoute: typeof rootRouteImport
-    }
   }
 }
 
 const rootRouteChildren: RootRouteChildren = {
-  IndexRoute: IndexRoute,
   ActivityRoute: ActivityRoute,
   AlarmsRoute: AlarmsRoute,
+  DashboardRoute: DashboardRoute,
   DietRoute: DietRoute,
   MedicineRoute: MedicineRoute,
   RegisterRoute: RegisterRoute,
