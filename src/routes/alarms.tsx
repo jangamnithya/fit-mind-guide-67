@@ -373,6 +373,39 @@ function AlarmsPage() {
           </ul>
         )}
       </div>
+
+      {ringing && (
+        <div className="fixed inset-0 z-50 bg-background/80 backdrop-blur-sm flex items-center justify-center p-4 animate-fade-in">
+          <div className="w-full max-w-sm bg-card border border-border/50 rounded-3xl shadow-elegant p-6 text-center relative">
+            <div className="size-20 mx-auto rounded-full bg-gradient-hero flex items-center justify-center text-primary-foreground shadow-glow animate-bounce">
+              <BellRing className="size-10" />
+            </div>
+            <h2 className="text-2xl font-bold mt-4">{ringing.label}</h2>
+            <p className="text-sm text-muted-foreground mt-1">{ringing.desc}</p>
+            <div className="text-xs uppercase tracking-wider text-primary font-semibold mt-3 animate-pulse">
+              ⏰ Ringing now
+            </div>
+            <div className="flex gap-2 mt-6">
+              <button
+                onClick={dismissRinging}
+                className="flex-1 h-11 rounded-full bg-gradient-hero text-primary-foreground font-semibold shadow-soft hover:shadow-elegant transition"
+              >
+                ✓ Dismiss
+              </button>
+              <button
+                onClick={() => {
+                  dismissRinging();
+                  setTimeout(() => triggerAlarm(ringing), 5 * 60 * 1000);
+                  toast("Snoozed for 5 min");
+                }}
+                className="h-11 px-4 rounded-full bg-muted hover:bg-secondary font-medium transition flex items-center gap-1"
+              >
+                <X className="size-4" /> Snooze 5m
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </AppLayout>
   );
 }
