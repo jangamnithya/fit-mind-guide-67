@@ -4,7 +4,7 @@ import { PageHeader } from "@/components/PageHeader";
 import { Switch } from "@/components/ui/switch";
 import { useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
-import { Plus, Sun, Moon, Droplets, Dumbbell, Pill, Trash2, Bell } from "lucide-react";
+import { Plus, Sun, Moon, Droplets, Dumbbell, Pill, Trash2, Bell, BellRing, X } from "lucide-react";
 
 export const Route = createFileRoute("/alarms")({
   head: () => ({
