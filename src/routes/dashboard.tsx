@@ -2,6 +2,8 @@ import { createFileRoute } from "@tanstack/react-router";
 import { AppLayout } from "@/components/AppLayout";
 import { PageHeader } from "@/components/PageHeader";
 import { StatCard } from "@/components/StatCard";
+import { useEffect, useRef, useState } from "react";
+import { toast } from "sonner";
 import {
   Footprints,
   Flame,
@@ -11,6 +13,8 @@ import {
   Apple,
   TrendingUp,
   Dumbbell,
+  Play,
+  Square,
 } from "lucide-react";
 import {
   Area,
@@ -58,7 +62,75 @@ const macros = [
   { label: "Fats", value: "58", unit: "g", target: 80, tone: "warning" as const },
 ];
 
+function formatTimer(sec: number) {
+  const m = Math.floor(sec / 60).toString().padStart(2, "0");
+  const s = (sec % 60).toString().padStart(2, "0");
+  return `${m}:${s}`;
+}
+
 function DashboardPage() {
+  // Workout session state
+  const [isWorkingOut, setIsWorkingOut] = useState(false);
+  const [elapsed, setElapsed] = useState(0);
+  const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
+
+  // Live stats (start from baseline; tick up while workout is active)
+  const [steps, setSteps] = useState(8750);
+  const [calories, setCalories] = useState(452);
+  const [water, setWater] = useState(1.8);
+
+  // Persist baseline so values feel real across reloads
+  useEffect(() => {
+    const saved = localStorage.getItem("aura_dashboard_stats");
+    if (saved) {
+      try {
+        const s = JSON.parse(saved);
+        if (typeof s.steps === "number") setSteps(s.steps);
+        if (typeof s.calories === "number") setCalories(s.calories);
+        if (typeof s.water === "number") setWater(s.water);
+      } catch {
+        /* ignore */
+      }
+    }
+  }, []);
+
+  useEffect(() => {
+    localStorage.setItem(
+      "aura_dashboard_stats",
+      JSON.stringify({ steps, calories, water }),
+    );
+  }, [steps, calories, water]);
+
+  useEffect(() => {
+    if (isWorkingOut) {
+      intervalRef.current = setInterval(() => {
+        setElapsed((e) => e + 1);
+        // ~1.8 steps/sec walking pace, ~0.12 kcal/sec
+        setSteps((s) => s + 2);
+        setCalories((c) => Math.round((c + 0.15) * 100) / 100);
+      }, 1000);
+    }
+    return () => {
+      if (intervalRef.current) clearInterval(intervalRef.current);
+    };
+  }, [isWorkingOut]);
+
+  const handleStartWorkout = () => {
+    setIsWorkingOut(true);
+    toast.success("Workout started — let's go! 💪");
+  };
+
+  const handleStopWorkout = () => {
+    setIsWorkingOut(false);
+    toast.success(`Workout complete! ${formatTimer(elapsed)} logged.`);
+    setElapsed(0);
+  };
+
+  const handleAddWater = () => {
+    setWater((w) => Math.round((w + 0.25) * 100) / 100);
+    toast.success("+250ml water logged");
+  };
+
   return (
     <AppLayout>
       <PageHeader
@@ -67,10 +139,60 @@ function DashboardPage() {
       />
 
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
-        <StatCard icon={Footprints} label="Steps" value="8,750" unit="/ 12k" progress={73} tone="accent" />
-        <StatCard icon={Flame} label="Calories" value="452" unit="kcal" progress={68} tone="warning" />
-        <StatCard icon={Droplets} label="Water" value="1.8" unit="L" progress={60} tone="primary" />
+        <StatCard
+          icon={Footprints}
+          label="Steps"
+          value={steps.toLocaleString()}
+          unit="/ 12k"
+          progress={Math.min(100, Math.round((steps / 12000) * 100))}
+          tone="accent"
+        />
+        <StatCard
+          icon={Flame}
+          label="Calories"
+          value={Math.round(calories).toString()}
+          unit="kcal"
+          progress={Math.min(100, Math.round((calories / 700) * 100))}
+          tone="warning"
+        />
+        <StatCard
+          icon={Droplets}
+          label="Water"
+          value={water.toFixed(2)}
+          unit="L"
+          progress={Math.min(100, Math.round((water / 3) * 100))}
+          tone="primary"
+        />
         <StatCard icon={Moon} label="Sleep" value="7.2" unit="hrs" progress={90} tone="primary" />
+      </div>
+
+      <div className="flex flex-wrap gap-2 mb-6">
+        <button
+          onClick={handleAddWater}
+          className="px-4 py-2 rounded-full bg-card border border-border/50 text-sm font-medium hover:bg-muted transition"
+        >
+          + 250ml water
+        </button>
+        <button
+          onClick={() => {
+            setSteps((s) => s + 500);
+            toast.success("+500 steps logged");
+          }}
+          className="px-4 py-2 rounded-full bg-card border border-border/50 text-sm font-medium hover:bg-muted transition"
+        >
+          + 500 steps
+        </button>
+        <button
+          onClick={() => {
+            setSteps(0);
+            setCalories(0);
+            setWater(0);
+            toast("Daily stats reset");
+          }}
+          className="px-4 py-2 rounded-full bg-card border border-border/50 text-sm font-medium hover:bg-muted transition"
+        >
+          Reset day
+        </button>
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-6">
@@ -125,14 +247,38 @@ function DashboardPage() {
           <Dumbbell className="size-8 mb-4" />
           <h3 className="text-xl font-bold">Today's Workout</h3>
           <p className="text-sm opacity-90 mt-1">Upper Body Strength</p>
-          <div className="mt-6 space-y-2 text-sm">
-            <div className="flex justify-between"><span className="opacity-80">Duration</span><span className="font-semibold">45 min</span></div>
-            <div className="flex justify-between"><span className="opacity-80">Exercises</span><span className="font-semibold">8</span></div>
-            <div className="flex justify-between"><span className="opacity-80">Burn target</span><span className="font-semibold">320 kcal</span></div>
-          </div>
-          <button className="mt-6 w-full bg-white text-primary font-semibold rounded-full py-2.5 hover:bg-white/90 transition">
-            Start Workout
-          </button>
+
+          {isWorkingOut ? (
+            <div className="mt-6 space-y-3">
+              <div className="rounded-2xl bg-white/15 backdrop-blur p-4 text-center">
+                <div className="text-xs uppercase tracking-wider opacity-80">In progress</div>
+                <div className="text-4xl font-bold tabular-nums mt-1">{formatTimer(elapsed)}</div>
+                <div className="text-xs opacity-80 mt-1">
+                  {Math.round(calories)} kcal · {steps.toLocaleString()} steps
+                </div>
+              </div>
+              <button
+                onClick={handleStopWorkout}
+                className="w-full bg-white text-primary font-semibold rounded-full py-2.5 hover:bg-white/90 transition flex items-center justify-center gap-2"
+              >
+                <Square className="size-4" /> Stop Workout
+              </button>
+            </div>
+          ) : (
+            <>
+              <div className="mt-6 space-y-2 text-sm">
+                <div className="flex justify-between"><span className="opacity-80">Duration</span><span className="font-semibold">45 min</span></div>
+                <div className="flex justify-between"><span className="opacity-80">Exercises</span><span className="font-semibold">8</span></div>
+                <div className="flex justify-between"><span className="opacity-80">Burn target</span><span className="font-semibold">320 kcal</span></div>
+              </div>
+              <button
+                onClick={handleStartWorkout}
+                className="mt-6 w-full bg-white text-primary font-semibold rounded-full py-2.5 hover:bg-white/90 transition flex items-center justify-center gap-2"
+              >
+                <Play className="size-4" /> Start Workout
+              </button>
+            </>
+          )}
         </div>
       </div>
 
