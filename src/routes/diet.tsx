@@ -179,7 +179,10 @@ function DietPage() {
         {days.map((d) => (
           <button
             key={d}
-            onClick={() => setDay(d)}
+            onClick={() => {
+              setDay(d);
+              setPlan(generatePlan());
+            }}
             className={cn(
               "flex flex-col items-center min-w-16 px-4 py-3 rounded-2xl text-sm font-medium transition",
               day === d
