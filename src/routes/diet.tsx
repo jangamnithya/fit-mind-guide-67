@@ -179,7 +179,10 @@ function DietPage() {
         {days.map((d) => (
           <button
             key={d}
-            onClick={() => setDay(d)}
+            onClick={() => {
+              setDay(d);
+              setPlan(generatePlan());
+            }}
             className={cn(
               "flex flex-col items-center min-w-16 px-4 py-3 rounded-2xl text-sm font-medium transition",
               day === d
@@ -193,41 +196,47 @@ function DietPage() {
         ))}
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 mb-6">
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-5 mb-6">
         {mealTypes.map((m) => {
           const data = plan[m.key];
           return (
             <div
               key={m.key}
-              className="bg-card border border-border/50 rounded-3xl p-5 shadow-soft hover:shadow-elegant transition"
+              className="bg-card border border-border/50 rounded-3xl overflow-hidden shadow-soft hover:shadow-elegant transition"
             >
-              <div className="flex items-start gap-4">
-                <div
-                  className={cn(
-                    "size-14 rounded-2xl flex items-center justify-center text-2xl",
-                    toneCls(m.tone),
-                  )}
-                  aria-hidden="true"
-                >
-                  <span>{data.emoji}</span>
+              <div
+                className={cn(
+                  "h-40 flex items-center justify-center text-8xl bg-gradient-to-br",
+                  m.tone === "accent"
+                    ? "from-accent/20 to-accent/5"
+                    : m.tone === "warning"
+                      ? "from-warning/20 to-warning/5"
+                      : "from-primary/20 to-primary/5",
+                )}
+                aria-hidden="true"
+              >
+                <span className="drop-shadow-sm">{data.emoji}</span>
+              </div>
+              <div className="p-5">
+                <div className="flex items-baseline justify-between">
+                  <h3 className="font-semibold flex items-center gap-2">
+                    <m.icon className={cn("size-4", toneCls(m.tone).split(" ")[1])} />
+                    {m.label}
+                  </h3>
+                  <span className="text-xs text-muted-foreground tabular-nums">
+                    {m.time}
+                  </span>
                 </div>
-                <div className="flex-1">
-                  <div className="flex items-baseline justify-between">
-                    <h3 className="font-semibold flex items-center gap-2">
-                      <m.icon className="size-4 text-muted-foreground" />
-                      {m.label}
-                    </h3>
-                    <span className="text-xs text-muted-foreground tabular-nums">{m.time}</span>
-                  </div>
-                  <p className="text-sm text-muted-foreground mt-1">{data.meal}</p>
-                  <div className="flex gap-3 mt-3 flex-wrap">
-                    <span className="text-xs px-2.5 py-1 rounded-full bg-muted font-medium">
-                      {data.kcal} kcal
-                    </span>
-                    <span className="text-xs px-2.5 py-1 rounded-full bg-accent/15 text-accent font-medium">
-                      {data.protein}g protein
-                    </span>
-                  </div>
+                <p className="text-sm text-muted-foreground mt-2 leading-relaxed">
+                  {data.meal}
+                </p>
+                <div className="flex gap-2 mt-3 flex-wrap">
+                  <span className="text-xs px-2.5 py-1 rounded-full bg-muted font-medium">
+                    {data.kcal} kcal
+                  </span>
+                  <span className="text-xs px-2.5 py-1 rounded-full bg-accent/15 text-accent font-medium">
+                    {data.protein}g protein
+                  </span>
                 </div>
               </div>
             </div>
