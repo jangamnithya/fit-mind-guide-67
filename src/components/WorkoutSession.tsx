@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from "react";
-import { Play, Pause, X, SkipForward, Sparkles } from "lucide-react";
+import { Play, Pause, X, SkipForward, SkipBack, Sparkles } from "lucide-react";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 import {
@@ -30,7 +30,6 @@ export function WorkoutSession({ category, open, onClose, onComplete, onTick }: 
 
   const current: Exercise | undefined = exercises[idx];
 
-  // reset when opening or category changes
   useEffect(() => {
     if (open) {
       setIdx(0);
@@ -41,18 +40,15 @@ export function WorkoutSession({ category, open, onClose, onComplete, onTick }: 
     }
   }, [open, category, exercises]);
 
-  // Timer
   useEffect(() => {
     if (!open || paused || !current) return;
     timerRef.current = setInterval(() => {
       setRemaining((r) => {
         if (r <= 1) {
-          // advance
           if (idx + 1 < exercises.length) {
             setIdx((i) => i + 1);
             return exercises[idx + 1].duration;
           } else {
-            // done
             return 0;
           }
         }
@@ -68,12 +64,10 @@ export function WorkoutSession({ category, open, onClose, onComplete, onTick }: 
     };
   }, [open, paused, current, idx, exercises, onTick]);
 
-  // Motivational popups every 8s
   useEffect(() => {
     if (!open || paused) return;
     popupRef.current = setInterval(() => {
-      const msg =
-        MOTIVATIONAL_MESSAGES[Math.floor(Math.random() * MOTIVATIONAL_MESSAGES.length)];
+      const msg = MOTIVATIONAL_MESSAGES[Math.floor(Math.random() * MOTIVATIONAL_MESSAGES.length)];
       setPopup(msg);
       setTimeout(() => setPopup(null), 2500);
     }, 8000);
@@ -82,7 +76,6 @@ export function WorkoutSession({ category, open, onClose, onComplete, onTick }: 
     };
   }, [open, paused]);
 
-  // detect completion
   useEffect(() => {
     if (open && idx === exercises.length - 1 && remaining === 0) {
       onComplete?.(totalKcal, totalSec);
@@ -96,13 +89,20 @@ export function WorkoutSession({ category, open, onClose, onComplete, onTick }: 
   const totalExercises = exercises.length;
   const progress = ((idx + (1 - remaining / current.duration)) / totalExercises) * 100;
 
-  const handleSkip = () => {
+  const goNext = () => {
     if (idx + 1 < exercises.length) {
       setIdx(idx + 1);
       setRemaining(exercises[idx + 1].duration);
     } else {
       onComplete?.(totalKcal, totalSec);
       onClose();
+    }
+  };
+
+  const goPrev = () => {
+    if (idx > 0) {
+      setIdx(idx - 1);
+      setRemaining(exercises[idx - 1].duration);
     }
   };
 
@@ -113,12 +113,12 @@ export function WorkoutSession({ category, open, onClose, onComplete, onTick }: 
   };
 
   return (
-    <div className="fixed inset-0 z-50 bg-background/95 backdrop-blur flex items-center justify-center p-4 animate-fade-in">
-      <div className="w-full max-w-lg bg-card border border-border/50 rounded-3xl shadow-elegant p-6 relative">
+    <div className="fixed inset-0 z-50 bg-background/95 backdrop-blur flex items-center justify-center p-4 animate-fade-in overflow-y-auto">
+      <div className="w-full max-w-2xl bg-card border border-border/50 rounded-3xl shadow-elegant p-6 relative my-auto">
         <button
           onClick={handleStop}
           aria-label="Close workout"
-          className="absolute top-4 right-4 size-9 rounded-full bg-muted hover:bg-secondary flex items-center justify-center transition"
+          className="absolute top-4 right-4 size-9 rounded-full bg-muted hover:bg-secondary flex items-center justify-center transition z-10"
         >
           <X className="size-4" />
         </button>
@@ -126,34 +126,68 @@ export function WorkoutSession({ category, open, onClose, onComplete, onTick }: 
         <div className="text-xs text-muted-foreground font-medium uppercase tracking-wider">
           Exercise {idx + 1} / {totalExercises}
         </div>
-        <h2 className="text-2xl font-bold mt-1">{current.name}</h2>
+        <h2 className="text-2xl font-bold mt-1 flex items-center gap-2">
+          <span className="text-3xl">{current.emoji}</span> {current.name}
+        </h2>
+        {current.tip && (
+          <p className="text-sm text-muted-foreground mt-1">💡 {current.tip}</p>
+        )}
 
-        <div className="mt-6 flex flex-col items-center">
+        {/* Video demo */}
+        {current.videoId ? (
+          <div className="mt-4 aspect-video w-full rounded-2xl overflow-hidden bg-black shadow-elegant">
+            <iframe
+              key={current.videoId + idx}
+              src={`https://www.youtube.com/embed/${current.videoId}?autoplay=1&mute=1&controls=1&rel=0&modestbranding=1`}
+              title={current.name}
+              className="w-full h-full"
+              frameBorder="0"
+              allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+              allowFullScreen
+            />
+          </div>
+        ) : (
+          <div className="mt-4 aspect-video w-full rounded-2xl bg-gradient-hero flex items-center justify-center text-9xl">
+            {current.emoji}
+          </div>
+        )}
+
+        {/* Timer */}
+        <div className="mt-5 flex items-center justify-between gap-4">
+          <div>
+            <div className="text-5xl font-bold tabular-nums">
+              {String(Math.floor(remaining / 60)).padStart(2, "0")}:
+              {String(remaining % 60).padStart(2, "0")}
+            </div>
+            <div className="text-xs text-muted-foreground mt-1">
+              {Math.round(totalKcal)} kcal · {Math.floor(totalSec / 60)}m {totalSec % 60}s
+            </div>
+          </div>
           <div
             className={cn(
-              "size-40 rounded-full bg-gradient-hero text-primary-foreground flex items-center justify-center text-7xl shadow-elegant",
+              "size-20 rounded-full bg-gradient-hero text-primary-foreground flex items-center justify-center text-4xl shadow-elegant shrink-0",
               !paused && "animate-pulse",
             )}
           >
             <span className="drop-shadow-sm">{current.emoji}</span>
           </div>
-          <div className="mt-5 text-5xl font-bold tabular-nums">
-            {String(Math.floor(remaining / 60)).padStart(2, "0")}:
-            {String(remaining % 60).padStart(2, "0")}
-          </div>
-          <div className="text-xs text-muted-foreground mt-1">
-            {Math.round(totalKcal)} kcal · {Math.floor(totalSec / 60)}m {totalSec % 60}s
-          </div>
         </div>
 
-        <div className="mt-6 h-2 w-full overflow-hidden rounded-full bg-muted">
+        <div className="mt-4 h-2 w-full overflow-hidden rounded-full bg-muted">
           <div
             className="h-full bg-gradient-hero transition-all duration-1000"
             style={{ width: `${Math.min(100, progress)}%` }}
           />
         </div>
 
-        <div className="flex gap-2 mt-6">
+        <div className="flex gap-2 mt-5">
+          <button
+            onClick={goPrev}
+            disabled={idx === 0}
+            className="h-11 px-4 rounded-xl bg-muted hover:bg-secondary font-medium flex items-center gap-2 transition disabled:opacity-40"
+          >
+            <SkipBack className="size-4" /> Prev
+          </button>
           <button
             onClick={() => setPaused((p) => !p)}
             className="flex-1 h-11 rounded-xl bg-gradient-hero text-primary-foreground font-semibold flex items-center justify-center gap-2 shadow-soft hover:shadow-elegant transition"
@@ -162,10 +196,10 @@ export function WorkoutSession({ category, open, onClose, onComplete, onTick }: 
             {paused ? "Resume" : "Pause"}
           </button>
           <button
-            onClick={handleSkip}
+            onClick={goNext}
             className="h-11 px-4 rounded-xl bg-muted hover:bg-secondary font-medium flex items-center gap-2 transition"
           >
-            <SkipForward className="size-4" /> Next
+            Next <SkipForward className="size-4" />
           </button>
         </div>
 
