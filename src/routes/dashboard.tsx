@@ -2,6 +2,11 @@ import { createFileRoute } from "@tanstack/react-router";
 import { AppLayout } from "@/components/AppLayout";
 import { PageHeader } from "@/components/PageHeader";
 import { StatCard } from "@/components/StatCard";
+import { BmiCharacter } from "@/components/BmiCharacter";
+import { Chatbot } from "@/components/Chatbot";
+import { WorkoutSession } from "@/components/WorkoutSession";
+import { useUser } from "@/hooks/useUser";
+import { calcBmi, EXERCISES_BY_CATEGORY, type BmiCategory } from "@/lib/bmi";
 import { useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
 import {
@@ -14,7 +19,7 @@ import {
   TrendingUp,
   Dumbbell,
   Play,
-  Square,
+  Activity as ActivityIcon,
 } from "lucide-react";
 import {
   Area,
@@ -33,7 +38,7 @@ export const Route = createFileRoute("/dashboard")({
       {
         name: "description",
         content:
-          "Personal fitness companion: track steps, calories, hydration, sleep, medicine and weekly health progress.",
+          "Personal fitness companion: BMI-based workouts, smart diet plans, chatbot assistant and real-time tracking.",
       },
       { property: "og:title", content: "Aura — Personal Fitness Companion" },
       {
@@ -62,24 +67,39 @@ const macros = [
   { label: "Fats", value: "58", unit: "g", target: 80, tone: "warning" as const },
 ];
 
-function formatTimer(sec: number) {
-  const m = Math.floor(sec / 60).toString().padStart(2, "0");
-  const s = (sec % 60).toString().padStart(2, "0");
-  return `${m}:${s}`;
-}
+const RECOMMENDATIONS: Record<BmiCategory, { title: string; desc: string }> = {
+  underweight: {
+    title: "Light workouts + Yoga",
+    desc: "Focus on gentle strength building and flexibility to develop healthy mass.",
+  },
+  normal: {
+    title: "Mixed Cardio + Strength",
+    desc: "Keep your fitness sharp with a balanced cardio and resistance routine.",
+  },
+  overweight: {
+    title: "Walking + Beginner Yoga",
+    desc: "Low-impact movements that burn calories while protecting your joints.",
+  },
+};
 
 function DashboardPage() {
-  // Workout session state
-  const [isWorkingOut, setIsWorkingOut] = useState(false);
-  const [elapsed, setElapsed] = useState(0);
-  const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const { user } = useUser();
+  const bmi = user ? calcBmi(user.weight, user.height) : null;
+  const category: BmiCategory = bmi?.category ?? "normal";
+  const rec = RECOMMENDATIONS[category];
 
-  // Live stats (start from baseline; tick up while workout is active)
+  // Workout
+  const [sessionOpen, setSessionOpen] = useState(false);
+  const [characterMood, setCharacterMood] = useState<"happy" | "encouraging" | "idle">(
+    "idle",
+  );
+  const idleTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  // Live stats
   const [steps, setSteps] = useState(8750);
   const [calories, setCalories] = useState(452);
   const [water, setWater] = useState(1.8);
 
-  // Persist baseline so values feel real across reloads
   useEffect(() => {
     const saved = localStorage.getItem("aura_dashboard_stats");
     if (saved) {
@@ -101,29 +121,26 @@ function DashboardPage() {
     );
   }, [steps, calories, water]);
 
+  // Encourage when idle
   useEffect(() => {
-    if (isWorkingOut) {
-      intervalRef.current = setInterval(() => {
-        setElapsed((e) => e + 1);
-        // ~1.8 steps/sec walking pace, ~0.12 kcal/sec
-        setSteps((s) => s + 2);
-        setCalories((c) => Math.round((c + 0.15) * 100) / 100);
-      }, 1000);
-    }
+    if (sessionOpen) return;
+    idleTimerRef.current = setTimeout(() => setCharacterMood("encouraging"), 6000);
     return () => {
-      if (intervalRef.current) clearInterval(intervalRef.current);
+      if (idleTimerRef.current) clearTimeout(idleTimerRef.current);
     };
-  }, [isWorkingOut]);
+  }, [sessionOpen, characterMood]);
 
   const handleStartWorkout = () => {
-    setIsWorkingOut(true);
-    toast.success("Workout started — let's go! 💪");
+    setSessionOpen(true);
+    setCharacterMood("encouraging");
+    toast.success(`Starting ${rec.title} 💪`);
   };
 
-  const handleStopWorkout = () => {
-    setIsWorkingOut(false);
-    toast.success(`Workout complete! ${formatTimer(elapsed)} logged.`);
-    setElapsed(0);
+  const handleWorkoutComplete = (kcal: number, sec: number) => {
+    setCalories((c) => Math.round((c + kcal) * 100) / 100);
+    setSteps((s) => s + Math.round(sec * 1.5));
+    setCharacterMood("happy");
+    setTimeout(() => setCharacterMood("idle"), 6000);
   };
 
   const handleAddWater = () => {
@@ -134,9 +151,95 @@ function DashboardPage() {
   return (
     <AppLayout>
       <PageHeader
-        title="Good morning, Alex 👋"
+        title={user ? `Good day, ${user.name.split(" ")[0]} 👋` : "Welcome 👋"}
         subtitle="Here's how your body is doing today."
       />
+
+      {/* BMI + Character + Recommendation */}
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-6">
+        <div className="lg:col-span-2 bg-card rounded-3xl p-6 shadow-soft border border-border/50 flex items-center gap-6">
+          <BmiCharacter category={category} mood={characterMood} size={130} />
+          <div className="flex-1 min-w-0">
+            <div className="flex items-center gap-2">
+              <span className="text-xs uppercase tracking-wider text-muted-foreground font-semibold">
+                Your BMI
+              </span>
+              {bmi && (
+                <span
+                  className={`text-[11px] px-2 py-0.5 rounded-full font-semibold ${
+                    bmi.tone === "warning"
+                      ? "bg-warning/15 text-warning"
+                      : bmi.tone === "accent"
+                        ? "bg-accent/15 text-accent"
+                        : "bg-primary/15 text-primary"
+                  }`}
+                >
+                  {bmi.label}
+                </span>
+              )}
+            </div>
+            <div className="text-4xl font-bold mt-1 tabular-nums">
+              {bmi ? bmi.bmi : "—"}
+            </div>
+            <h3 className="font-semibold mt-3 flex items-center gap-2">
+              <ActivityIcon className="size-4 text-primary" />
+              Recommended: {rec.title}
+            </h3>
+            <p className="text-sm text-muted-foreground mt-1">{rec.desc}</p>
+            <div className="flex flex-wrap gap-1.5 mt-3">
+              {EXERCISES_BY_CATEGORY[category].slice(0, 4).map((ex) => (
+                <span
+                  key={ex.name}
+                  className="text-xs px-2.5 py-1 rounded-full bg-muted font-medium"
+                >
+                  {ex.emoji} {ex.name}
+                </span>
+              ))}
+            </div>
+            <button
+              onClick={handleStartWorkout}
+              className="mt-4 inline-flex items-center gap-2 bg-gradient-hero text-primary-foreground rounded-full px-5 py-2.5 font-semibold shadow-soft hover:shadow-elegant transition"
+            >
+              <Play className="size-4" /> Start Workout
+            </button>
+          </div>
+        </div>
+
+        <div className="bg-gradient-hero rounded-3xl p-6 text-primary-foreground shadow-elegant relative overflow-hidden">
+          <div className="absolute -top-10 -right-10 size-40 rounded-full bg-white/10 blur-2xl" />
+          <Dumbbell className="size-8 mb-4" />
+          <h3 className="text-xl font-bold">Today's Plan</h3>
+          <p className="text-sm opacity-90 mt-1">{rec.title}</p>
+          <div className="mt-6 space-y-2 text-sm">
+            <div className="flex justify-between">
+              <span className="opacity-80">Exercises</span>
+              <span className="font-semibold">
+                {EXERCISES_BY_CATEGORY[category].length}
+              </span>
+            </div>
+            <div className="flex justify-between">
+              <span className="opacity-80">Est. duration</span>
+              <span className="font-semibold">
+                {Math.round(
+                  EXERCISES_BY_CATEGORY[category].reduce((a, b) => a + b.duration, 0) /
+                    60,
+                )}{" "}
+                min
+              </span>
+            </div>
+            <div className="flex justify-between">
+              <span className="opacity-80">Burn target</span>
+              <span className="font-semibold">~250 kcal</span>
+            </div>
+          </div>
+          <button
+            onClick={handleStartWorkout}
+            className="mt-6 w-full bg-white text-primary font-semibold rounded-full py-2.5 hover:bg-white/90 transition flex items-center justify-center gap-2"
+          >
+            <Play className="size-4" /> Start Workout
+          </button>
+        </div>
+      </div>
 
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
         <StatCard
@@ -242,77 +345,6 @@ function DashboardPage() {
           </div>
         </div>
 
-        <div className="bg-gradient-hero rounded-3xl p-6 text-primary-foreground shadow-elegant relative overflow-hidden">
-          <div className="absolute -top-10 -right-10 size-40 rounded-full bg-white/10 blur-2xl" />
-          <Dumbbell className="size-8 mb-4" />
-          <h3 className="text-xl font-bold">Today's Workout</h3>
-          <p className="text-sm opacity-90 mt-1">Upper Body Strength</p>
-
-          {isWorkingOut ? (
-            <div className="mt-6 space-y-3">
-              <div className="rounded-2xl bg-white/15 backdrop-blur p-4 text-center">
-                <div className="text-xs uppercase tracking-wider opacity-80">In progress</div>
-                <div className="text-4xl font-bold tabular-nums mt-1">{formatTimer(elapsed)}</div>
-                <div className="text-xs opacity-80 mt-1">
-                  {Math.round(calories)} kcal · {steps.toLocaleString()} steps
-                </div>
-              </div>
-              <button
-                onClick={handleStopWorkout}
-                className="w-full bg-white text-primary font-semibold rounded-full py-2.5 hover:bg-white/90 transition flex items-center justify-center gap-2"
-              >
-                <Square className="size-4" /> Stop Workout
-              </button>
-            </div>
-          ) : (
-            <>
-              <div className="mt-6 space-y-2 text-sm">
-                <div className="flex justify-between"><span className="opacity-80">Duration</span><span className="font-semibold">45 min</span></div>
-                <div className="flex justify-between"><span className="opacity-80">Exercises</span><span className="font-semibold">8</span></div>
-                <div className="flex justify-between"><span className="opacity-80">Burn target</span><span className="font-semibold">320 kcal</span></div>
-              </div>
-              <button
-                onClick={handleStartWorkout}
-                className="mt-6 w-full bg-white text-primary font-semibold rounded-full py-2.5 hover:bg-white/90 transition flex items-center justify-center gap-2"
-              >
-                <Play className="size-4" /> Start Workout
-              </button>
-            </>
-          )}
-        </div>
-      </div>
-
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        <div className="lg:col-span-2 bg-card rounded-3xl p-6 shadow-soft border border-border/50">
-          <div className="flex items-center justify-between mb-5">
-            <div>
-              <h2 className="text-lg font-semibold">Nutrition Today</h2>
-              <p className="text-sm text-muted-foreground">Macro & micro tracking</p>
-            </div>
-            <Apple className="size-5 text-accent" />
-          </div>
-          <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-            {macros.map((m) => {
-              const pct = Math.round((parseInt(m.value) / m.target) * 100);
-              const barColor =
-                m.tone === "accent" ? "bg-gradient-accent" : m.tone === "warning" ? "bg-warning" : "bg-gradient-primary";
-              return (
-                <div key={m.label} className="rounded-2xl bg-muted p-4">
-                  <div className="text-xs text-muted-foreground font-medium">{m.label}</div>
-                  <div className="mt-1 flex items-baseline gap-1">
-                    <span className="text-2xl font-bold tabular-nums">{m.value}</span>
-                    <span className="text-xs text-muted-foreground">{m.unit}</span>
-                  </div>
-                  <div className="mt-3 h-1.5 w-full overflow-hidden rounded-full bg-background">
-                    <div className={`h-full rounded-full ${barColor}`} style={{ width: `${pct}%` }} />
-                  </div>
-                  <div className="text-[11px] text-muted-foreground mt-1.5">{pct}% of {m.target}{m.unit}</div>
-                </div>
-              );
-            })}
-          </div>
-        </div>
-
         <div className="bg-card rounded-3xl p-6 shadow-soft border border-border/50">
           <div className="flex items-center justify-between mb-5">
             <h2 className="text-lg font-semibold">Next Up</h2>
@@ -338,6 +370,51 @@ function DashboardPage() {
           </ul>
         </div>
       </div>
+
+      <div className="bg-card rounded-3xl p-6 shadow-soft border border-border/50">
+        <div className="flex items-center justify-between mb-5">
+          <div>
+            <h2 className="text-lg font-semibold">Nutrition Today</h2>
+            <p className="text-sm text-muted-foreground">Macro & micro tracking</p>
+          </div>
+          <Apple className="size-5 text-accent" />
+        </div>
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+          {macros.map((m) => {
+            const pct = Math.round((parseInt(m.value) / m.target) * 100);
+            const barColor =
+              m.tone === "accent"
+                ? "bg-gradient-accent"
+                : m.tone === "warning"
+                  ? "bg-warning"
+                  : "bg-gradient-primary";
+            return (
+              <div key={m.label} className="rounded-2xl bg-muted p-4">
+                <div className="text-xs text-muted-foreground font-medium">{m.label}</div>
+                <div className="mt-1 flex items-baseline gap-1">
+                  <span className="text-2xl font-bold tabular-nums">{m.value}</span>
+                  <span className="text-xs text-muted-foreground">{m.unit}</span>
+                </div>
+                <div className="mt-3 h-1.5 w-full overflow-hidden rounded-full bg-background">
+                  <div className={`h-full rounded-full ${barColor}`} style={{ width: `${pct}%` }} />
+                </div>
+                <div className="text-[11px] text-muted-foreground mt-1.5">
+                  {pct}% of {m.target}
+                  {m.unit}
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      </div>
+
+      <WorkoutSession
+        category={category}
+        open={sessionOpen}
+        onClose={() => setSessionOpen(false)}
+        onComplete={handleWorkoutComplete}
+      />
+      <Chatbot />
     </AppLayout>
   );
 }
