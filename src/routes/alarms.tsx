@@ -4,7 +4,7 @@ import { PageHeader } from "@/components/PageHeader";
 import { Switch } from "@/components/ui/switch";
 import { useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
-import { Plus, Sun, Moon, Droplets, Dumbbell, Pill, Trash2, Bell } from "lucide-react";
+import { Plus, Sun, Moon, Droplets, Dumbbell, Pill, Trash2, Bell, BellRing, X } from "lucide-react";
 
 export const Route = createFileRoute("/alarms")({
   head: () => ({
@@ -66,13 +66,54 @@ function format12h(t: string) {
   return `${h12.toString().padStart(2, "0")}:${m} ${period}`;
 }
 
+// Generate a beep tone using Web Audio API (no asset required)
+function playAlarmSound(audioCtxRef: { current: AudioContext | null }, stopFlag: { current: boolean }) {
+  try {
+    if (!audioCtxRef.current) {
+      const Ctx = window.AudioContext || (window as unknown as { webkitAudioContext: typeof AudioContext }).webkitAudioContext;
+      audioCtxRef.current = new Ctx();
+    }
+    const ctx = audioCtxRef.current;
+    const playBeep = (offset: number) => {
+      const osc = ctx.createOscillator();
+      const gain = ctx.createGain();
+      osc.type = "sine";
+      osc.frequency.value = 880;
+      gain.gain.setValueAtTime(0.0001, ctx.currentTime + offset);
+      gain.gain.exponentialRampToValueAtTime(0.4, ctx.currentTime + offset + 0.05);
+      gain.gain.exponentialRampToValueAtTime(0.0001, ctx.currentTime + offset + 0.4);
+      osc.connect(gain);
+      gain.connect(ctx.destination);
+      osc.start(ctx.currentTime + offset);
+      osc.stop(ctx.currentTime + offset + 0.45);
+    };
+    // ring sequence
+    for (let i = 0; i < 6; i++) playBeep(i * 0.5);
+    // Repeat every 3.5s while popup is open
+    const id = setInterval(() => {
+      if (stopFlag.current) {
+        clearInterval(id);
+        return;
+      }
+      for (let i = 0; i < 6; i++) playBeep(i * 0.5);
+    }, 3500);
+    return id;
+  } catch {
+    return null;
+  }
+}
+
 function AlarmsPage() {
   const [alarms, setAlarms] = useState<Alarm[]>([]);
   const [time, setTime] = useState("08:00");
   const [label, setLabel] = useState("Take Medicine");
   const [desc, setDesc] = useState("1 tablet after meals");
   const [iconKey, setIconKey] = useState<IconKey>("Pill");
+  const [ringing, setRinging] = useState<Alarm | null>(null);
   const initialized = useRef(false);
+  const audioCtxRef = useRef<AudioContext | null>(null);
+  const stopRingFlag = useRef(false);
+  const ringIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
   // Load from localStorage
   useEffect(() => {
@@ -99,7 +140,32 @@ function AlarmsPage() {
     localStorage.setItem(STORAGE_KEY, JSON.stringify(alarms));
   }, [alarms]);
 
-  // Tick every 15s and check alarms
+  // Trigger an alarm: popup + sound + notification
+  const triggerAlarm = (a: Alarm) => {
+    setRinging(a);
+    stopRingFlag.current = false;
+    if (ringIntervalRef.current) clearInterval(ringIntervalRef.current);
+    ringIntervalRef.current = playAlarmSound(audioCtxRef, stopRingFlag);
+    if (typeof Notification !== "undefined" && Notification.permission === "granted") {
+      try {
+        new Notification(`⏰ ${a.label}`, { body: a.desc });
+      } catch {
+        /* ignore */
+      }
+    }
+    toast(`⏰ ${a.label}`, { description: a.desc });
+  };
+
+  const dismissRinging = () => {
+    stopRingFlag.current = true;
+    if (ringIntervalRef.current) {
+      clearInterval(ringIntervalRef.current);
+      ringIntervalRef.current = null;
+    }
+    setRinging(null);
+  };
+
+  // Tick every 1s and check alarms
   useEffect(() => {
     const check = () => {
       const now = new Date();
@@ -110,28 +176,30 @@ function AlarmsPage() {
 
       setAlarms((prev) => {
         let changed = false;
+        let toFire: Alarm | null = null;
         const next = prev.map((a) => {
           if (a.on && a.time === current && a.lastFiredAt !== dayKey) {
             changed = true;
-            // Fire notification
-            if (typeof Notification !== "undefined" && Notification.permission === "granted") {
-              try {
-                new Notification(`⏰ ${a.label}`, { body: a.desc });
-              } catch {
-                /* ignore */
-              }
-            }
-            toast(`⏰ ${a.label}`, { description: a.desc });
+            if (!toFire) toFire = a;
             return { ...a, lastFiredAt: dayKey };
           }
           return a;
         });
+        if (toFire) triggerAlarm(toFire);
         return changed ? next : prev;
       });
     };
     check();
-    const id = setInterval(check, 15000);
+    const id = setInterval(check, 1000);
     return () => clearInterval(id);
+  }, []);
+
+  // Cleanup audio
+  useEffect(() => {
+    return () => {
+      stopRingFlag.current = true;
+      if (ringIntervalRef.current) clearInterval(ringIntervalRef.current);
+    };
   }, []);
 
   const handleAddAlarm = (e: React.FormEvent) => {
@@ -154,6 +222,19 @@ function AlarmsPage() {
     toast.success(`Alarm set for ${format12h(time)}`);
     setLabel("Take Medicine");
     setDesc("1 tablet after meals");
+  };
+
+  const testAlarm = () => {
+    triggerAlarm({
+      id: "test",
+      time: "now",
+      label: "Time to take your medicine 💊",
+      desc: "This is a test alert. Tap dismiss to stop the sound.",
+      iconKey: "Pill",
+      days: "Test",
+      on: true,
+      tone: "accent",
+    });
   };
 
   const toggleAlarm = (id: string) => {
@@ -235,12 +316,21 @@ function AlarmsPage() {
             <option value="Moon">🌙 Sleep</option>
           </select>
         </div>
-        <button
-          type="submit"
-          className="mt-4 flex items-center gap-2 bg-gradient-hero text-primary-foreground rounded-full px-5 py-2.5 font-medium shadow-soft hover:shadow-elegant transition"
-        >
-          <Plus className="size-4" /> Add Alarm
-        </button>
+        <div className="mt-4 flex flex-wrap gap-2">
+          <button
+            type="submit"
+            className="flex items-center gap-2 bg-gradient-hero text-primary-foreground rounded-full px-5 py-2.5 font-medium shadow-soft hover:shadow-elegant transition"
+          >
+            <Plus className="size-4" /> Add Alarm
+          </button>
+          <button
+            type="button"
+            onClick={testAlarm}
+            className="flex items-center gap-2 bg-card border border-border rounded-full px-5 py-2.5 font-medium hover:bg-muted transition"
+          >
+            <BellRing className="size-4" /> Test Alarm
+          </button>
+        </div>
       </form>
 
       <div className="bg-card rounded-3xl border border-border/50 shadow-soft overflow-hidden">
@@ -283,6 +373,39 @@ function AlarmsPage() {
           </ul>
         )}
       </div>
+
+      {ringing && (
+        <div className="fixed inset-0 z-50 bg-background/80 backdrop-blur-sm flex items-center justify-center p-4 animate-fade-in">
+          <div className="w-full max-w-sm bg-card border border-border/50 rounded-3xl shadow-elegant p-6 text-center relative">
+            <div className="size-20 mx-auto rounded-full bg-gradient-hero flex items-center justify-center text-primary-foreground shadow-glow animate-bounce">
+              <BellRing className="size-10" />
+            </div>
+            <h2 className="text-2xl font-bold mt-4">{ringing.label}</h2>
+            <p className="text-sm text-muted-foreground mt-1">{ringing.desc}</p>
+            <div className="text-xs uppercase tracking-wider text-primary font-semibold mt-3 animate-pulse">
+              ⏰ Ringing now
+            </div>
+            <div className="flex gap-2 mt-6">
+              <button
+                onClick={dismissRinging}
+                className="flex-1 h-11 rounded-full bg-gradient-hero text-primary-foreground font-semibold shadow-soft hover:shadow-elegant transition"
+              >
+                ✓ Dismiss
+              </button>
+              <button
+                onClick={() => {
+                  dismissRinging();
+                  setTimeout(() => triggerAlarm(ringing), 5 * 60 * 1000);
+                  toast("Snoozed for 5 min");
+                }}
+                className="h-11 px-4 rounded-full bg-muted hover:bg-secondary font-medium transition flex items-center gap-1"
+              >
+                <X className="size-4" /> Snooze 5m
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </AppLayout>
   );
 }
