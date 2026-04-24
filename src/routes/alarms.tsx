@@ -316,12 +316,21 @@ function AlarmsPage() {
             <option value="Moon">🌙 Sleep</option>
           </select>
         </div>
-        <button
-          type="submit"
-          className="mt-4 flex items-center gap-2 bg-gradient-hero text-primary-foreground rounded-full px-5 py-2.5 font-medium shadow-soft hover:shadow-elegant transition"
-        >
-          <Plus className="size-4" /> Add Alarm
-        </button>
+        <div className="mt-4 flex flex-wrap gap-2">
+          <button
+            type="submit"
+            className="flex items-center gap-2 bg-gradient-hero text-primary-foreground rounded-full px-5 py-2.5 font-medium shadow-soft hover:shadow-elegant transition"
+          >
+            <Plus className="size-4" /> Add Alarm
+          </button>
+          <button
+            type="button"
+            onClick={testAlarm}
+            className="flex items-center gap-2 bg-card border border-border rounded-full px-5 py-2.5 font-medium hover:bg-muted transition"
+          >
+            <BellRing className="size-4" /> Test Alarm
+          </button>
+        </div>
       </form>
 
       <div className="bg-card rounded-3xl border border-border/50 shadow-soft overflow-hidden">
